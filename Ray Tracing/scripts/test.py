@@ -33,17 +33,17 @@ def ray_color(direction):
 @ti.kernel  
 def initialize():
     for x,y in pixels:
-        r = x * 1.0 / (WIDTH-1)
-        g = y * 1.0 / (HEIGHT-1)
-        b = 0.25
+        # r = x * 1.0 / (WIDTH-1)
+        # g = y * 1.0 / (HEIGHT-1)
+        # b = 0.25
 
-        ir = 255.999 * r
-        ig = 255.999 * g
-        ib = 255.999 * b
-        pixels[x,y] =  ti.Vector([ir, ig, ib])
+        # ir = 255.999 * r
+        # ig = 255.999 * g
+        # ib = 255.999 * b
+        # pixels[x,y] =  ti.Vector([ir, ig, ib])
 
-        u = x / (WIDTH-1)
-        v = y / (HEIGHT-1)
+        # u = x / (WIDTH-1)
+        # v = y / (HEIGHT-1)
 
         rays.origins[x,y] = origin
         rays.directions[x,y] = lower_left_corner+u*horizontal + v*vertical - origin
