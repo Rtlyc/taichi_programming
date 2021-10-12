@@ -24,11 +24,35 @@ lower_left_corner = origin-horizontal/2-vertical/2-ti.Vector([0,0,focal_length])
 
 ###### Operation #########
 @ti.func
-def ray_color(direction):
-    unit_direction = direction.normalized()
-    print(unit_direction)
-    t = 0.5 * (unit_direction[1]+1)
-    return ((1.0-t)*ti.Vector([1.0,1.0,1.0])+t*ti.Vector([0.5,0.7,1.0]))*255.999
+def hit_sphere(center, radius, origin, direction):
+    oc = origin - center
+    a = direction.dot(direction)
+    b = 2.0 * oc.dot(direction)
+    c = oc.dot(oc) - radius*radius
+    discriminant = b*b - 4.0*a*c
+
+    result = -1.0
+    if discriminant >= 0:
+        result = (-b-ti.sqrt(discriminant))/(2.0*a)
+    return result 
+
+@ti.func
+def ray_color(x,y):
+    origin = rays.origins[x,y]
+    direction = rays.directions[x,y]
+    result = ti.Vector([1.0,0.0,0.0])
+    t = hit_sphere(ti.Vector([0.0,0.0,-1.0]),0.5,origin, direction)
+    if t>0:
+        n = rays.get_at(x,y,t) - ti.Vector([0.0,0.0,-1.0])
+        n = n.normalized()
+        result = 0.5*ti.Vector([n.x+1.0,n.y+1.0,n.z+1.0])*255.999
+    else:
+        unit_direction = direction.normalized()
+        # print(unit_direction)
+        t = 0.5 * (unit_direction.y+1.0)
+        result = ((1.0-t)*ti.Vector([1.0,1.0,1.0])+t*ti.Vector([0.5,0.7,1.0]))*255.999
+    return result
+
 
 @ti.kernel  
 def initialize():
@@ -42,12 +66,12 @@ def initialize():
         # ib = 255.999 * b
         # pixels[x,y] =  ti.Vector([ir, ig, ib])
 
-        # u = x / (WIDTH-1)
-        # v = y / (HEIGHT-1)
+        u = x / (WIDTH-1)
+        v = y / (HEIGHT-1)
 
         rays.origins[x,y] = origin
         rays.directions[x,y] = lower_left_corner+u*horizontal + v*vertical - origin
-        # pixels[x,y] = ray_color(rays.directions[x,y])
+        pixels[x,y] = ray_color(x,y)
         # print("remaining:", WIDTH-x)
 
 
