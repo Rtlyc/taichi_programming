@@ -14,6 +14,15 @@ class HitRecord:
         self.point = point
         self.normal = normal
         self.t = t 
+        self.front_face = True 
+    
+    @ti.func
+    def set_face_normal(self, direction, outward_normal):
+        front_face = direction.dot(outward_normal) < 0
+        if front_face:
+            self.normal = outward_normal 
+        else:
+            self.normal = -1.0*outward_normal 
 
 class Sphere:
     def __init__(self, center, radius):
@@ -46,6 +55,8 @@ def hit_sphere(center, radius, origin, direction, t_min, t_max, hit_record):
             hit_record.t=root 
             hit_record.point=ray_at(origin, direction, hit_record.t)
             hit_record.normal=(hit_record.point-center)/radius
+            outward_normal = (hit_record.point-center)/radius 
+            hit_record.set_face_normal(direction, outward_normal)
     return hitted,hit_record
 
 # TODO: take care of hit record, rec.t=root, rec.p=r.at(rec.t), rec.normal=(rec.p-center)/radius 
