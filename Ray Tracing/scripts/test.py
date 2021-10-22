@@ -26,14 +26,14 @@ lower_left_corner = origin-horizontal/2-vertical/2-ti.Vector([0,0,focal_length])
 @ti.func
 def hit_sphere(center, radius, origin, direction):
     oc = origin - center
-    a = direction.dot(direction)
-    b = 2.0 * oc.dot(direction)
-    c = oc.dot(oc) - radius*radius
-    discriminant = b*b - 4.0*a*c
+    a = direction.norm_sqr()
+    half_b = oc.dot(direction)
+    c = oc.norm_sqr() - radius*radius
+    discriminant = half_b*half_b - a*c
 
     result = -1.0
     if discriminant >= 0:
-        result = (-b-ti.sqrt(discriminant))/(2.0*a)
+        result = (-half_b-ti.sqrt(discriminant))/a
     return result 
 
 @ti.func
