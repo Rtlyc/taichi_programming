@@ -72,12 +72,15 @@ class World:
         self.spheres.clear()
 
     @ti.func
-    def hit(self, origin, direction, t_min, t_max):
+    def hit(self, origin, direction, t_min, t_max, hit_record):
+        temp_hitrecord = HitRecord()
         hit_anything = False
         closest_so_far = t_max
         for sphere in self.spheres:
-            hitted,root = hit_sphere(sphere.center,sphere.radius, origin, direction, t_min, t_max)
+            hitted,ret_record = hit_sphere(sphere.center,sphere.radius, origin, direction, t_min, closest_so_far, temp_hitrecord)
             if hitted: 
                 hit_anything = True
-                closest_so_far = root
-        return hit_anything, closest_so_far
+                closest_so_far = ret_record.t
+                hit_record = ret_record
+
+        return hit_anything, hit_record
