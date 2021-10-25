@@ -2,6 +2,7 @@ import taichi as ti
 import numpy as np
 import time 
 from ray import Rays
+from hittable import *
 
 ####### Initialization ########
 ti.init(ti.cpu)
@@ -12,12 +13,19 @@ pixels = ti.Vector.field(3, dtype=ti.u8)
 ti.root.dense(ti.ij, (WIDTH, HEIGHT)).place(pixels) 
 
 rays = Rays(WIDTH,HEIGHT)
+
+######## World ##########
+world = World()
+world.add(Sphere(ti.Vector([0.0,0.0,-1.0]),0.5))
+world.add(Sphere(ti.Vector([0.0,-100.5,-1.0]), 100.0))
+world.finalize()
+
 ###### Camera ##########
 viewport_height = 2.0
 viewport_width = aspect_ratio * viewport_height
 focal_length = 1.0
 
-origin = ti.Vector([0,0,0])
+origin = ti.Vector([0.0,0.0,0.0])
 horizontal = ti.Vector([viewport_width,0,0])
 vertical = ti.Vector([0,viewport_height,0])
 lower_left_corner = origin-horizontal/2-vertical/2-ti.Vector([0,0,focal_length])
@@ -37,41 +45,37 @@ def hit_sphere(center, radius, origin, direction):
     return result 
 
 @ti.func
-def ray_color(x,y):
-    origin = rays.origins[x,y]
-    direction = rays.directions[x,y]
+def ray_color(x,y,world):
+    ray_origin = rays.origins[x,y]
+    ray_direction = rays.directions[x,y]
     result = ti.Vector([1.0,0.0,0.0])
-    t = hit_sphere(ti.Vector([0.0,0.0,-1.0]),0.5,origin, direction)
-    if t>0:
-        n = rays.get_at(x,y,t) - ti.Vector([0.0,0.0,-1.0])
-        n = n.normalized()
-        result = 0.5*ti.Vector([n.x+1.0,n.y+1.0,n.z+1.0])*255.999
+
+    # temp_record = HitRecord(0.0)
+    hit_anything, normal = world.hit(ray_origin, ray_direction, 0, INFINITY)
+
+    # t = hit_sphere(ti.Vector([0.0,0.0,-1.0]),0.5,origin, direction)
+    if hit_anything:
+        # n = rays.get_at(x,y,t) - ti.Vector([0.0,0.0,-1.0])
+        # n = n.normalized()
+        result = 0.5*(normal+ti.Vector([1.0,1.0,1.0])) 
+        # result = 0.5*ti.Vector([n.x+1.0,n.y+1.0,n.z+1.0])*255.999
     else:
-        unit_direction = direction.normalized()
+        unit_direction = ray_direction.normalized()
         # print(unit_direction)
         t = 0.5 * (unit_direction.y+1.0)
-        result = ((1.0-t)*ti.Vector([1.0,1.0,1.0])+t*ti.Vector([0.5,0.7,1.0]))*255.999
-    return result
+        result = ((1.0-t)*ti.Vector([1.0,1.0,1.0])+t*ti.Vector([0.5,0.7,1.0]))
+    return result*255.999
 
 
 @ti.kernel  
 def initialize():
     for x,y in pixels:
-        # r = x * 1.0 / (WIDTH-1)
-        # g = y * 1.0 / (HEIGHT-1)
-        # b = 0.25
-
-        # ir = 255.999 * r
-        # ig = 255.999 * g
-        # ib = 255.999 * b
-        # pixels[x,y] =  ti.Vector([ir, ig, ib])
-
         u = x / (WIDTH-1)
         v = y / (HEIGHT-1)
 
         rays.origins[x,y] = origin
-        rays.directions[x,y] = lower_left_corner+u*horizontal + v*vertical - origin
-        pixels[x,y] = ray_color(x,y)
+        rays.directions[x,y] = lower_left_corner+u*horizontal + v*vertical
+        pixels[x,y] = ray_color(x,y,world)
         # print("remaining:", WIDTH-x)
 
 
