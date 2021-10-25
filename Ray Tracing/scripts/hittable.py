@@ -44,24 +44,29 @@ def hit_sphere(center, radius, ray_origin, ray_direction, t_min, t_max):
     half_b = oc.dot(ray_direction)
     c = oc.norm_sqr() - radius*radius
     discriminant = half_b*half_b - a*c
-    # hit_record = HitRecord(0.0)
-    cur_normal = ti.Vector([0.0,0.0,0.0])
 
+    cur_normal = ti.Vector([1.0,0.0,0.0])
     root = -1.0
     hitted = False
-    if discriminant >= 0:
+    if discriminant<0:
+        pass 
+    else:
         sqrtd = ti.sqrt(discriminant)
 
         # find the nearest root that lies in the acceptable range
         root = (-half_b-sqrtd)/a
-        if not (root<t_min or root>t_max):
-            hitted = True
-            # hit_record.t=root 
-            point=ray_at(ray_origin, ray_direction, root)
-            outward_normal = (point-center)/radius 
-            cur_normal = set_face_normal(ray_direction, outward_normal)
+        if (root<t_min or root>t_max):
+            root = (-half_b+sqrtd)/a 
+            if root<t_min or t_max < root:
+                hitted = False 
+            else:
+                hitted = True  
         else:
-            root=(-half_b+sqrtd)/a
+            hitted = True 
+        point=ray_at(ray_origin, ray_direction, root)
+        outward_normal = (point-center)/radius 
+        cur_normal = set_face_normal(ray_direction, outward_normal)
+
     return hitted,root,cur_normal
 
 # TODO: take care of hit record, rec.t=root, rec.p=r.at(rec.t), rec.normal=(rec.p-center)/radius 
@@ -92,12 +97,13 @@ class World:
         # temp_hitrecord = HitRecord(0.0)
         hit_anything = False
         closest_so_far = t_max
-        normal = ti.Vector([0.0,0.0,0.0])
+        normal = ti.Vector([0.0,1.0,0.0])
         for i in range(self.n):
-            hitted,root,normal = hit_sphere(self.center[i],self.radius[i], ray_origin, ray_direction, t_min, closest_so_far)
+            hitted,root,cur_normal = hit_sphere(self.center[i],self.radius[i], ray_origin, ray_direction, t_min, closest_so_far)
             if hitted: 
                 hit_anything = True
                 closest_so_far = root
+                normal = cur_normal 
         #TODO: if not hit: my solution: 0,1,0, his solution: previous value
         return hit_anything, normal 
 
