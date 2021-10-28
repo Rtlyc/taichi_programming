@@ -7,11 +7,11 @@ from hittable import *
 from camera import *
 
 ####### Initialization ########
-ti.init(ti.cpu)
+ti.init(ti.cpu, debug=True, cpu_max_num_threads=1, advanced_optimization=False)
 aspect_ratio = 16.0/9.0
 WIDTH = 400
 HEIGHT = int(400/aspect_ratio)
-samples_per_pixel = 100
+samples_per_pixel = 10
 pixels = ti.Vector.field(3, dtype=ti.f32)   
 color_pixels = ti.Vector.field(3, dtype=ti.u8)
 sample_count = ti.field(dtype=ti.i32)
@@ -89,8 +89,8 @@ def initialize():
         needs_sample[x,y] = 1
 
 @ti.kernel  
-def render() -> ti.i32:
-    completed = 0
+def render()->ti.i32:
+    pixels_completed = 0
     for x,y in pixels:
         if sample_count[x,y] == samples_per_pixel: 
             continue
@@ -104,8 +104,9 @@ def render() -> ti.i32:
         # pixels[x,y] += ti.Vector([120,20,50])
         sample_count[x,y] += 1
         if sample_count[x,y] == samples_per_pixel:
-            completed += 1
-    return completed
+            pixels_completed += 1
+    # print(pixels_completed)
+    return pixels_completed
 
 @ti.kernel
 def finalize():
@@ -115,18 +116,22 @@ def finalize():
 
 
 ###### Rendering #########
-initialize()
-pixels_completed = 0
-pixels_all = WIDTH*HEIGHT
-while pixels_completed<pixels_all:
-    complete = render()
-    # print(complete)
-    pixels_completed += complete
-    # print(pixels_completed/pixels_all, file=sys.stderr)
-# finalize()
+if __name__ == '__main__':
+    initialize()
+    pixels_completed = 0
+    pixels_all = WIDTH*HEIGHT
+    count = 0
+    while pixels_completed<pixels_all:
+        num = render()
+        pixels_completed += num 
+        count += 1
+        # complete = render()
+        # print(complete)
+        # pixels_completed += complete
+        # print(pixels_completed/pixels_all, file=sys.stderr)
+    # finalize()
 
-ti.imwrite(pixels.to_numpy(), 'out.png')
-# print(pixels.to_numpy())
-print(HEIGHT)
-# print(color_pixels.to_numpy())
+    ti.imwrite(pixels.to_numpy(), 'out.png')
+    # print(pixels.to_numpy())
+    # print(color_pixels.to_numpy())
 
