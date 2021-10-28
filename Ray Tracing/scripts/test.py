@@ -39,15 +39,13 @@ vertical = ti.Vector([0,viewport_height,0])
 lower_left_corner = origin-horizontal/2-vertical/2-ti.Vector([0,0,focal_length])
 
 ###### Operation #########
-import random 
 @ti.func
-def random_in_unit_sphere(small, large):
-    cur = ti.Vector([1.0,1.0,1.0])
-    while True:
-        cur = ti.Vector([random.uniform(small, large), random.uniform(small, large), random.uniform(small, large)])
-        if cur.norm_sqr()<1.0:
-            break 
-    return cur 
+def random_in_unit_sphere():
+    theta = ti.random()*pi*2.0
+    v = ti.random()
+    phi = ti.acos(2.0*v-1.0)
+    r = ti.random()**(1.0/3.0)
+    return ti.Vector([r*ti.sin(phi)*ti.cos(theta), r*ti.sin(phi)*ti.sin*theta, r*ti.cos(phi)])
             
 
 
@@ -72,9 +70,10 @@ def ray_color(ray_origin, ray_direction, world):
     # hit_anything, normal, p = True, ti.Vector([1.0, 0.0, 0.0]), ti.Vector([0.0, 0.0, 0.0])
 
     if hit_anything:
-        # target = p+normal+random_in_unit_sphere(-1.0,1.0) 
-        # rays.origins[x,y] = p 
-        # rays.origins[x,y] = target-p
+        # target = p+normal+random_in_unit_sphere() 
+        # new_origin, new_direction = ray_origin, target-p
+        # while hit_anything:
+        #     hit_anything, normal, p = world.hit(new_origin, new_direction, 0, INFINITY)
         result = 0.5*(normal+ti.Vector([1.0,1.0,1.0])) 
         # result = 0.5*()
     else:
@@ -91,22 +90,28 @@ def initialize():
         needs_sample[x,y] = 1
 
 @ti.kernel  
-def render():
+def render()->ti.i32:
+    num_completed = 0
     for x,y in pixels:
-        color = ti.Vector.zero(float, 3)
-        for _ in range(samples_per_pixel):
-            u = (x+ti.random()) / (WIDTH-1)
-            v = (y+ti.random()) / (HEIGHT-1)
-            origin,direction = cam.get_ray(u,v)
-            color += ray_color(origin,direction,world)
-            # color += ti.Vector([0.2,0.1,0.5])
-        color /= samples_per_pixel
-        pixels[x,y] = color
+        # color = ti.Vector.zero(float, 3)
+        if sample_count[x,y] == samples_per_pixel:
+            continue 
+        u = (x+ti.random()) / (WIDTH-1)
+        v = (y+ti.random()) / (HEIGHT-1)
+        origin,direction = cam.get_ray(u,v)
+        pixels[x,y] += ray_color(origin,direction,world)
+        sample_count[x,y] += 1
+        if sample_count[x,y] == samples_per_pixel:
+            num_completed += 1
+        # color += ti.Vector([0.2,0.1,0.5])
+        # color /= samples_per_pixel
+        # pixels[x,y] = color
 
         # rays.origins[x,y] = origin
         # rays.directions[x,y] = direction
         # pixels[x,y] += ray_color(origin,direction,world)/samples_per_pixel
         # pixels[x,y] += ti.Vector([120,20,50])
+    return num_completed
 
 
 @ti.kernel
@@ -120,18 +125,18 @@ def finalize():
 if __name__ == '__main__':
     initialize()
     render()
-    # pixels_completed = 0
-    # pixels_all = WIDTH*HEIGHT
+    pixels_completed = 0
+    pixels_all = WIDTH*HEIGHT
     # count = 0
-    # while pixels_completed<pixels_all:
-    #     num = render()
-    #     pixels_completed += num 
-    #     count += 1
+    while pixels_completed<pixels_all:
+        num = render()
+        pixels_completed += num 
+        # count += 1
         # complete = render()
         # print(complete)
         # pixels_completed += complete
         # print(pixels_completed/pixels_all, file=sys.stderr)
-    # finalize()
+    finalize()
 
     ti.imwrite(pixels.to_numpy(), 'out.png')
     # print(pixels.to_numpy())
