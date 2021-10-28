@@ -46,6 +46,7 @@ def hit_sphere(center, radius, ray_origin, ray_direction, t_min, t_max):
     discriminant = half_b*half_b - a*c
 
     cur_normal = ti.Vector([1.0,0.0,0.0])
+    point = ti.Vector([1.0,0.0,0.0])
     root = -1.0
     hitted = False
     if discriminant<0:
@@ -67,7 +68,7 @@ def hit_sphere(center, radius, ray_origin, ray_direction, t_min, t_max):
         outward_normal = (point-center)/radius 
         cur_normal = set_face_normal(ray_direction, outward_normal)
 
-    return hitted,root,cur_normal
+    return hitted,root,cur_normal,point
 
 # TODO: take care of hit record, rec.t=root, rec.p=r.at(rec.t), rec.normal=(rec.p-center)/radius 
 
@@ -98,14 +99,15 @@ class World:
         hit_anything = False
         closest_so_far = t_max
         normal = ti.Vector([0.0,1.0,0.0])
+        p = ti.Vector([0.0,1.0,0.0])
         for i in range(self.n):
-            hitted,root,cur_normal = hit_sphere(self.center[i],self.radius[i], ray_origin, ray_direction, t_min, closest_so_far)
+            hitted,root,cur_normal,p = hit_sphere(self.center[i],self.radius[i], ray_origin, ray_direction, t_min, closest_so_far)
             if hitted: 
                 hit_anything = True
                 closest_so_far = root
                 normal = cur_normal 
         #TODO: if not hit: my solution: 0,1,0, his solution: previous value
-        return hit_anything, normal 
+        return hit_anything, normal, p
 
 @ti.func
 def find_normal(ray_origin, ray_direction, root, center, radius):
