@@ -90,7 +90,7 @@ def render()->ti.i32:
 
         ######## Intersection ########
         # result = ti.Vector.zero(float,3)
-        hit_anything, normal, p = world.hit(ray_origin, ray_direction, 0, INFINITY)
+        hit_anything, normal, p = world.hit(ray_origin, ray_direction, 0.001, INFINITY)
         ray_depth -= 1
         rays.depths[x,y] = ray_depth 
         if hit_anything:
@@ -114,7 +114,7 @@ def render()->ti.i32:
 @ti.kernel
 def finalize():
     for x,y in pixels:
-        pixels[x,y] = pixels[x,y]/samples_per_pixel
+        pixels[x,y] = ti.sqrt(pixels[x,y]/samples_per_pixel)
 
 
 
