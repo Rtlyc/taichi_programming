@@ -21,4 +21,8 @@ def random_in_unit_sphere():
 @ti.func
 def near_zero(vec):
     s = 1e-8
-    return abs(vec.x)<s and abs(vec.y)<s and abs(vec.z)<s  
+    return abs(vec.x)<s and abs(vec.y)<s and abs(vec.z)<s 
+
+@ti.func 
+def reflect(v,n):
+    return v-2*v.dot(n)*n 
