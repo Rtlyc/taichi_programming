@@ -1,15 +1,7 @@
 import taichi as ti
 from ray import *
 
-## Constants
-INFINITY = float('inf')
-PI = 3.141592653589793238
-# normal = ti.Vector([0.0,0.0,0.0])
-# ti.root.dense(ti.i, (1)).place(normal)
 
-## Utility Functions
-def degrees_to_radians(degrees):
-    return degrees*PI/180.0
 @ti.data_oriented
 class HitRecord:
     def __init__(self, t:ti.f32, point=ti.Vector([0.0,0.0,0.0]), normal=ti.Vector([0.0,0.0,0.0])):
@@ -27,9 +19,10 @@ def set_face_normal(direction, outward_normal):
     return cur_normal
 
 class Sphere:
-    def __init__(self, center, radius):
+    def __init__(self, center, radius, material):
         self.center = center
         self.radius = radius
+        self.material = material
 
 @ti.func
 def is_front_face(direction, outward_normal):

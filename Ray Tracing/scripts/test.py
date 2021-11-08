@@ -5,6 +5,7 @@ import sys
 from ray import Rays
 from hittable import *
 from camera import *
+from utils import *
 
 ####### Initialization ########
 # ti.init(ti.cpu, debug=True, cpu_max_num_threads=8, advanced_optimization=False)
@@ -41,15 +42,7 @@ vertical = ti.Vector([0,viewport_height,0])
 lower_left_corner = origin-horizontal/2-vertical/2-ti.Vector([0,0,focal_length])
 
 ###### Operation #########
-@ti.func
-def random_in_unit_sphere():
-    theta = ti.random()*pi*2.0
-    v = ti.random()
-    phi = ti.acos(2.0*v-1.0)
-    r = ti.random()**(1/3)
-    ret = ti.Vector([r*ti.sin(phi)*ti.cos(theta), r*ti.sin(phi)*ti.sin(theta), r*ti.cos(phi)])
-    return ret
-            
+  
 
 
 @ti.func
