@@ -13,6 +13,7 @@ aspect_ratio = 16.0/9.0
 WIDTH = 400
 HEIGHT = int(400/aspect_ratio)
 samples_per_pixel = 100
+max_depth = 50
 pixels = ti.Vector.field(3, dtype=ti.f32)   
 color_pixels = ti.Vector.field(3, dtype=ti.u8)
 sample_count = ti.field(dtype=ti.i32)
@@ -32,6 +33,7 @@ viewport_height = 2.0
 viewport_width = aspect_ratio * viewport_height
 focal_length = 1.0
 cam = Camera()
+start_attenuation = ti.Vector([1.0, 1.0, 1.0])
 
 origin = ti.Vector([0.0,0.0,0.0])
 horizontal = ti.Vector([viewport_width,0,0])
@@ -44,8 +46,9 @@ def random_in_unit_sphere():
     theta = ti.random()*pi*2.0
     v = ti.random()
     phi = ti.acos(2.0*v-1.0)
-    r = ti.random()**(1.0/3.0)
-    return ti.Vector([r*ti.sin(phi)*ti.cos(theta), r*ti.sin(phi)*ti.sin*theta, r*ti.cos(phi)])
+    r = ti.random()**(1/3)
+    ret = ti.Vector([r*ti.sin(phi)*ti.cos(theta), r*ti.sin(phi)*ti.sin(theta), r*ti.cos(phi)])
+    return ret
             
 
 
@@ -62,27 +65,6 @@ def hit_sphere(center, radius, origin, direction):
         result = (-half_b-ti.sqrt(discriminant))/a
     return result 
 
-@ti.func
-def ray_color(ray_origin, ray_direction, world):
-    result = ti.Vector([1.0,0.0,0.0])
-
-    hit_anything, normal, p = world.hit(ray_origin, ray_direction, 0, INFINITY)
-    # hit_anything, normal, p = True, ti.Vector([1.0, 0.0, 0.0]), ti.Vector([0.0, 0.0, 0.0])
-
-    if hit_anything:
-        # target = p+normal+random_in_unit_sphere() 
-        # new_origin, new_direction = ray_origin, target-p
-        # while hit_anything:
-        #     hit_anything, normal, p = world.hit(new_origin, new_direction, 0, INFINITY)
-        result = 0.5*(normal+ti.Vector([1.0,1.0,1.0])) 
-        # result = 0.5*()
-    else:
-        unit_direction = ray_direction.normalized()
-        t = 0.5 * (unit_direction.y+1.0)
-        result = ((1.0-t)*ti.Vector([1.0,1.0,1.0])+t*ti.Vector([0.5,0.7,1.0]))
-    return result
-
-
 @ti.kernel  
 def initialize():
     for x,y in sample_count:
@@ -96,21 +78,36 @@ def render()->ti.i32:
         # color = ti.Vector.zero(float, 3)
         if sample_count[x,y] == samples_per_pixel:
             continue 
-        u = (x+ti.random()) / (WIDTH-1)
-        v = (y+ti.random()) / (HEIGHT-1)
-        origin,direction = cam.get_ray(u,v)
-        pixels[x,y] += ray_color(origin,direction,world)
-        sample_count[x,y] += 1
-        if sample_count[x,y] == samples_per_pixel:
-            num_completed += 1
-        # color += ti.Vector([0.2,0.1,0.5])
-        # color /= samples_per_pixel
-        # pixels[x,y] = color
+        ray_origin, ray_direction, ray_depth, ray_attenuation = ti.Vector.zero(float,3), ti.Vector.zero(float,3), max_depth, start_attenuation
+        if needs_sample[x,y] == 1:
+            needs_sample[x,y] = 0
+            u = (x+ti.random()) / (WIDTH-1)
+            v = (y+ti.random()) / (HEIGHT-1)
+            ray_origin, ray_direction = cam.get_ray(u,v)
+            rays.set_ray(x, y, ray_origin, ray_direction, max_depth, ray_attenuation)
+        else:
+            ray_origin, ray_direction, ray_depth, ray_attenuation = rays.get_ray(x,y)
 
-        # rays.origins[x,y] = origin
-        # rays.directions[x,y] = direction
-        # pixels[x,y] += ray_color(origin,direction,world)/samples_per_pixel
-        # pixels[x,y] += ti.Vector([120,20,50])
+        ######## Intersection ########
+        # result = ti.Vector.zero(float,3)
+        hit_anything, normal, p = world.hit(ray_origin, ray_direction, 0, INFINITY)
+        ray_depth -= 1
+        rays.depths[x,y] = ray_depth 
+        if hit_anything:
+            target = p+normal+random_in_unit_sphere() 
+            new_origin, new_direction = ray_origin, target-p
+            rays.set_ray(x,y,new_origin,new_direction,ray_depth,ray_attenuation*0.5)
+            ray_direction = new_direction
+            # pixels[x,y] += 0.5*(normal+ti.Vector([1.0,1.0,1.0])) 
+
+        if not hit_anything or ray_depth==0:
+            sample_count[x,y] += 1
+            needs_sample[x,y] = 1
+            unit_direction = ray_direction.normalized()
+            t = 0.5 * (unit_direction.y+1.0)
+            pixels[x,y] += ray_attenuation*((1.0-t)*ti.Vector([1.0,1.0,1.0])+t*ti.Vector([0.5,0.7,1.0]))
+            if sample_count[x,y] == samples_per_pixel:
+                num_completed += 1
     return num_completed
 
 
