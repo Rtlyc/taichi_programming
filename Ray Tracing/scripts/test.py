@@ -42,7 +42,12 @@ world.finalize()
 viewport_height = 2.0
 viewport_width = aspect_ratio * viewport_height
 focal_length = 1.0
-cam = Camera(ti.Vector([-2.0,2.0,1.0]),ti.Vector([0.0,0.0,-1]),ti.Vector([0.0,1.0,0.0]), 90.0, aspect_ratio)
+lookfrom = ti.Vector([3.0,3.0,2.0])
+lookat = ti.Vector([0.0,0.0,-1.0])
+vup = ti.Vector([0.0,1.0,0.0])
+dist_to_focus = (lookfrom-lookat).norm()
+aperture = 2.0
+cam = Camera(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus)
 start_attenuation = ti.Vector([1.0, 1.0, 1.0])
 
 origin = ti.Vector([0.0,0.0,0.0])

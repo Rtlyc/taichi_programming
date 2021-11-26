@@ -17,6 +17,12 @@ def random_in_unit_sphere():
     r = ti.random()**(1/3)
     ret = ti.Vector([r*ti.sin(phi)*ti.cos(theta), r*ti.sin(phi)*ti.sin(theta), r*ti.cos(phi)])
     return ret
+
+@ti.func
+def random_in_unit_disk():
+    theta = ti.random() * math.pi * 2.0
+    r = ti.random()**0.5
+    return ti.Vector([r * ti.cos(theta), r * ti.sin(theta), 0.0])
           
 @ti.func
 def near_zero(vec):
