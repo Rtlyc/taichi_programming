@@ -18,21 +18,24 @@ class Lambertian:
 
 @ti.data_oriented
 class Metal:
-    def __init__(self, color):
+    def __init__(self, color, fuzz):
         self.albedo = color 
+        self.fuzz = fuzz if fuzz<1.0 else 1.0
     
     @staticmethod 
     @ti.func
-    def scatter(ray_point, ray_direction, normal, color):
+    def scatter(ray_point, ray_direction, normal, color, fuzz):
         reflected = reflect(ray_direction.normalized(), normal)
-        return reflected.dot(normal)>0, ray_point, reflected, color
+        scattered = reflected + fuzz*random_in_unit_sphere()
+        return scattered.dot(normal)>0, ray_point, scattered, color
 
 @ti.data_oriented
 class Materials:
     def __init__(self, n):
         self.colors = ti.Vector.field(3, ti.f32)
         self.types = ti.field(ti.u32)
-        ti.root.dense(ti.i, n).place(self.colors, self.types)
+        self.fuzzes = ti.field(ti.f32)
+        ti.root.dense(ti.i, n).place(self.colors, self.types, self.fuzzes)
 
     def set(self, ind, mat):
         self.colors[ind] = mat.albedo
@@ -41,6 +44,7 @@ class Materials:
             type = 1
         elif(isinstance(mat,Metal)):
             type = 2
+            self.fuzzes[ind] = mat.fuzz 
         self.types[ind] = type 
 
 
@@ -53,6 +57,6 @@ class Materials:
         if self.types[i]==1:
             is_reflected, ray_point, reflected, attenuation = Lambertian.scatter(p,n,self.colors[i])
         elif self.types[i]==2:
-            is_reflected, ray_point, reflected, attenuation = Metal.scatter(p,ray_direction, n, self.colors[i])
+            is_reflected, ray_point, reflected, attenuation = Metal.scatter(p,ray_direction, n, self.colors[i], self.fuzzes[i])
         return is_reflected, ray_point, reflected, attenuation 
         
