@@ -42,9 +42,16 @@ class Dielectric:
         refraction_ratio = 1.0/ir if front_facing else ir 
         
         unit_direction = ray_direction.normalized()
-        refracted = refract(unit_direction, normal, refraction_ratio)
+        cos_theta = min(-unit_direction.dot(normal), 1.0)
+        sin_theta = ti.sqrt(1.0-cos_theta*cos_theta)
+        cannot_refracted = refraction_ratio*sin_theta>1.0
+
+        direction = refract(unit_direction, normal, refraction_ratio)
+        if cannot_refracted:
+            direction = reflect(unit_direction, normal)
+
         
-        return True, ray_point, refracted, attenuation
+        return True, ray_point, direction, attenuation
 
 @ti.data_oriented
 class Materials:
