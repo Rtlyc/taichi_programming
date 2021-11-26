@@ -33,3 +33,9 @@ def refract(uv,n,etai_over_etat):
     r_out_perp = etai_over_etat * (uv+cos_theta*n)  
     r_out_parallel = -ti.sqrt(abs(1.0-r_out_perp.norm_sqr()))*n 
     return r_out_perp + r_out_parallel 
+
+@ti.func
+def reflectance(cosine, ref_idx):
+    r0 = (1-ref_idx)/(1+ref_idx)
+    r0 = r0*r0
+    return r0 + (1-r0)*pow((1-cosine),5)

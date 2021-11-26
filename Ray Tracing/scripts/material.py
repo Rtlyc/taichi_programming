@@ -47,7 +47,7 @@ class Dielectric:
         cannot_refracted = refraction_ratio*sin_theta>1.0
 
         direction = refract(unit_direction, normal, refraction_ratio)
-        if cannot_refracted:
+        if cannot_refracted or reflectance(cos_theta, refraction_ratio)>ti.random():
             direction = reflect(unit_direction, normal)
 
         

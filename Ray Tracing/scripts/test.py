@@ -33,6 +33,7 @@ material_right = Metal(ti.Vector([0.8,0.6,0.2]),0.0)
 world.add(Sphere(ti.Vector([0.0,-100.5,-1.0]), 100.0, material_ground))
 world.add(Sphere(ti.Vector([0.0,0.0,-1.0]),0.5,material_center))
 world.add(Sphere(ti.Vector([-1.0,0.0,-1.0]),0.5,material_left))
+world.add(Sphere(ti.Vector([-1.0,0.0,-1.0]),-0.4,material_left))
 world.add(Sphere(ti.Vector([1.0,0.0,-1.0]),0.5,material_right))
 world.finalize()
 
