@@ -3,20 +3,23 @@ from utils import *
 
 @ti.data_oriented
 class Camera:
-    def __init__(self, vfov, aspect_ratio):
+    def __init__(self, lookfrom, lookat, vup, vfov, aspect_ratio):
         theta = degrees_to_radians(vfov)
         viewport_height = ti.tan(theta/2)*2
         viewport_width = aspect_ratio*viewport_height
-        focal_length = 1.0
 
-        self.origin = ti.Vector([0.0, 0.0, 0.0])
-        self.horizontal = ti.Vector([viewport_width, 0.0, 0.0])
-        self.vertical = ti.Vector([0.0, viewport_height, 0.0])
-        self.lower_left_corner = self.origin - self.horizontal/2 - self.vertical/2 - ti.Vector([0.0, 0.0, focal_length])
+        w = (lookfrom-lookat).normalized()
+        u = (vup.cross(w)).normalized()
+        v = w.cross(u)
+
+        self.origin = lookfrom
+        self.horizontal = viewport_width*u
+        self.vertical = viewport_height*v 
+        self.lower_left_corner = self.origin - self.horizontal/2 - self.vertical/2 - w
 
     @ti.func 
-    def get_ray(self, u, v):
-        return self.origin, self.lower_left_corner + u*self.horizontal + v*self.vertical - self.origin 
+    def get_ray(self, s, t):
+        return self.origin, self.lower_left_corner + s*self.horizontal + t*self.vertical - self.origin 
 
 # @ti.func
 # def clamp(x, min, max):
