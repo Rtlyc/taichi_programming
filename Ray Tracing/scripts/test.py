@@ -27,8 +27,8 @@ rays = Rays(WIDTH,HEIGHT)
 ######## World ##########
 world = World()
 material_ground = Lambertian(ti.Vector([0.8,0.8,0.0]))
-material_center = Lambertian(ti.Vector([0.7,0.3,0.3]))
-material_left = Metal(ti.Vector([0.8,0.8,0.8]),0.3)
+material_center = Dielectric(1.5)
+material_left = Dielectric(1.5)
 material_right = Metal(ti.Vector([0.8,0.6,0.2]),1.0)
 world.add(Sphere(ti.Vector([0.0,-100.5,-1.0]), 100.0, material_ground))
 world.add(Sphere(ti.Vector([0.0,0.0,-1.0]),0.5,material_center))
@@ -76,11 +76,11 @@ def render()->ti.i32:
 
         ######## Intersection ########
         # result = ti.Vector.zero(float,3)
-        hit_anything, normal, p, ind = world.hit(ray_origin, ray_direction, 0.001, INFINITY)
+        hit_anything, normal, p, ind, front_facing = world.hit(ray_origin, ray_direction, 0.001, INFINITY)
         ray_depth -= 1
         rays.depths[x,y] = ray_depth 
         if hit_anything:
-            is_reflected, new_origin, new_direction, attenuation = world.materials.scatter(ind, ray_direction, p, normal)
+            is_reflected, new_origin, new_direction, attenuation = world.materials.scatter(ind, ray_direction, p, normal, front_facing)
             rays.set_ray(x,y,new_origin,new_direction,ray_depth,ray_attenuation*attenuation)
             ray_direction = new_direction
             # pixels[x,y] += 0.5*(normal+ti.Vector([1.0,1.0,1.0])) 

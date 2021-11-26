@@ -97,6 +97,7 @@ class World:
         n = ti.Vector([0.0,1.0,0.0])
         p = ti.Vector([0.0,1.0,0.0])
         ind = 0
+        front_facing = True
         for i in range(self.n):
             hitted,root = hit_sphere(self.center[i],self.radius[i], ray_origin, ray_direction, t_min, closest_so_far)
             if hitted: 
@@ -107,10 +108,10 @@ class World:
         if hit_anything:
             p = ray_at(ray_origin, ray_direction, closest_so_far)
             n = (p-self.center[ind])/self.radius[ind]
-            # front_facing = is_front_face(ray_direction, n)
-            # n = n if front_facing else -n
-            n = set_face_normal(ray_direction, n)
-        return hit_anything, n, p, ind
+            front_facing = is_front_face(ray_direction, n)
+            n = n if front_facing else -n
+            # n = set_face_normal(ray_direction, n)
+        return hit_anything, n, p, ind, front_facing
 
     # @ti.func
     # def scatter(self, ray_direction, p,n, front_facing, index):

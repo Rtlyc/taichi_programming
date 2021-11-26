@@ -26,3 +26,10 @@ def near_zero(vec):
 @ti.func 
 def reflect(v,n):
     return v-2.0*v.dot(n)*n 
+
+@ti.func
+def refract(uv,n,etai_over_etat):
+    cos_theta = min(-uv.dot(n),1.0)
+    r_out_perp = etai_over_etat * (uv+cos_theta*n)  
+    r_out_parallel = -ti.sqrt(abs(1.0-r_out_perp.norm_sqr()))*n 
+    return r_out_perp + r_out_parallel 
