@@ -1,5 +1,6 @@
 import taichi as ti
 from ray import *
+from material import *
 
 
 @ti.data_oriented
@@ -57,11 +58,12 @@ def hit_sphere(center, radius, ray_origin, ray_direction, t_min, t_max):
                 hitted = True  
         else:
             hitted = True 
-        point=ray_at(ray_origin, ray_direction, root)
-        outward_normal = (point-center)/radius 
-        cur_normal = set_face_normal(ray_direction, outward_normal)
+        # point=ray_at(ray_origin, ray_direction, root)
+        # outward_normal = (point-center)/radius 
+        # cur_normal = set_face_normal(ray_direction, outward_normal)
 
-    return hitted,root,cur_normal,point
+    # return hitted,root,cur_normal,point
+    return hitted,root
 
 # TODO: take care of hit record, rec.t=root, rec.p=r.at(rec.t), rec.normal=(rec.p-center)/radius 
 
@@ -80,27 +82,39 @@ class World:
         self.n = len(self.spheres)
         self.radius = ti.field(ti.f32)
         self.center = ti.Vector.field(3, dtype=ti.f32)
+        self.materials = Materials(self.n)
         ti.root.dense(ti.i, self.n).place(self.radius, self.center)
         for i in range(self.n):
             self.radius[i] = self.spheres[i].radius
             self.center[i] = self.spheres[i].center
+            self.materials.set(i,self.spheres[i].material)
         
 
     @ti.func
     def hit(self, ray_origin, ray_direction, t_min, t_max):
-        # temp_hitrecord = HitRecord(0.0)
         hit_anything = False
         closest_so_far = t_max
-        normal = ti.Vector([0.0,1.0,0.0])
+        n = ti.Vector([0.0,1.0,0.0])
         p = ti.Vector([0.0,1.0,0.0])
+        ind = 0
         for i in range(self.n):
-            hitted,root,cur_normal,p = hit_sphere(self.center[i],self.radius[i], ray_origin, ray_direction, t_min, closest_so_far)
+            hitted,root = hit_sphere(self.center[i],self.radius[i], ray_origin, ray_direction, t_min, closest_so_far)
             if hitted: 
                 hit_anything = True
                 closest_so_far = root
-                normal = cur_normal 
-        #TODO: if not hit: my solution: 0,1,0, his solution: previous value
-        return hit_anything, normal, p
+                # normal = cur_normal
+                ind = i
+        if hit_anything:
+            p = ray_at(ray_origin, ray_direction, closest_so_far)
+            n = (p-self.center[ind])/self.radius[ind]
+            # front_facing = is_front_face(ray_direction, n)
+            # n = n if front_facing else -n
+            n = set_face_normal(ray_direction, n)
+        return hit_anything, n, p, ind
+
+    # @ti.func
+    # def scatter(self, ray_direction, p,n, front_facing, index):
+    #     return self.materials
 
 @ti.func
 def find_normal(ray_origin, ray_direction, root, center, radius):

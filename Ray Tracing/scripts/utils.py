@@ -25,4 +25,4 @@ def near_zero(vec):
 
 @ti.func 
 def reflect(v,n):
-    return v-2*v.dot(n)*n 
+    return v-2.0*v.dot(n)*n 

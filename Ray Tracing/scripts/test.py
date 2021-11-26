@@ -6,6 +6,7 @@ from ray import Rays
 from hittable import *
 from camera import *
 from utils import *
+from material import *
 
 ####### Initialization ########
 # ti.init(ti.cpu, debug=True, cpu_max_num_threads=8, advanced_optimization=False)
@@ -25,8 +26,14 @@ rays = Rays(WIDTH,HEIGHT)
 
 ######## World ##########
 world = World()
-world.add(Sphere(ti.Vector([0.0,0.0,-1.0]),0.5))
-world.add(Sphere(ti.Vector([0.0,-100.5,-1.0]), 100.0))
+material_ground = Lambertian(ti.Vector([0.8,0.8,0.0]))
+material_center = Lambertian(ti.Vector([0.7,0.3,0.3]))
+material_left = Metal(ti.Vector([0.8,0.8,0.8]))
+material_right = Metal(ti.Vector([0.8,0.6,0.2]))
+world.add(Sphere(ti.Vector([0.0,-100.5,-1.0]), 100.0, material_ground))
+world.add(Sphere(ti.Vector([0.0,0.0,-1.0]),0.5,material_center))
+world.add(Sphere(ti.Vector([-1.0,0.0,-1.0]),0.5,material_left))
+world.add(Sphere(ti.Vector([1.0,0.0,-1.0]),0.5,material_right))
 world.finalize()
 
 ###### Camera ##########
@@ -43,20 +50,6 @@ lower_left_corner = origin-horizontal/2-vertical/2-ti.Vector([0,0,focal_length])
 
 ###### Operation #########
   
-
-
-@ti.func
-def hit_sphere(center, radius, origin, direction):
-    oc = origin - center
-    a = direction.norm_sqr()
-    half_b = oc.dot(direction)
-    c = oc.norm_sqr() - radius*radius
-    discriminant = half_b*half_b - a*c
-
-    result = -1.0
-    if discriminant >= 0:
-        result = (-half_b-ti.sqrt(discriminant))/a
-    return result 
 
 @ti.kernel  
 def initialize():
@@ -83,13 +76,12 @@ def render()->ti.i32:
 
         ######## Intersection ########
         # result = ti.Vector.zero(float,3)
-        hit_anything, normal, p = world.hit(ray_origin, ray_direction, 0.001, INFINITY)
+        hit_anything, normal, p, ind = world.hit(ray_origin, ray_direction, 0.001, INFINITY)
         ray_depth -= 1
         rays.depths[x,y] = ray_depth 
         if hit_anything:
-            target = p+normal+random_in_unit_sphere() 
-            new_origin, new_direction = ray_origin, target-p
-            rays.set_ray(x,y,new_origin,new_direction,ray_depth,ray_attenuation*0.5)
+            is_reflected, new_origin, new_direction, attenuation = world.materials.scatter(ind, ray_direction, p, normal)
+            rays.set_ray(x,y,new_origin,new_direction,ray_depth,ray_attenuation*attenuation)
             ray_direction = new_direction
             # pixels[x,y] += 0.5*(normal+ti.Vector([1.0,1.0,1.0])) 
 
