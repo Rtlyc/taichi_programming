@@ -26,22 +26,27 @@ rays = Rays(WIDTH,HEIGHT)
 
 ######## World ##########
 world = World()
-material_ground = Lambertian(ti.Vector([0.8,0.8,0.0]))
-material_center = Lambertian(ti.Vector([0.1,0.2,0.5]))
-material_left = Dielectric(1.5)
-material_right = Metal(ti.Vector([0.8,0.6,0.2]),0.0)
-world.add(Sphere(ti.Vector([0.0,-100.5,-1.0]), 100.0, material_ground))
-world.add(Sphere(ti.Vector([0.0,0.0,-1.0]),0.5,material_center))
-world.add(Sphere(ti.Vector([-1.0,0.0,-1.0]),0.5,material_left))
-world.add(Sphere(ti.Vector([-1.0,0.0,-1.0]),-0.4,material_left))
-world.add(Sphere(ti.Vector([1.0,0.0,-1.0]),0.5,material_right))
+# material_ground = Lambertian(ti.Vector([0.8,0.8,0.0]))
+# material_center = Lambertian(ti.Vector([0.1,0.2,0.5]))
+# material_left = Dielectric(1.5)
+# material_right = Metal(ti.Vector([0.8,0.6,0.2]),0.0)
+# world.add(Sphere(ti.Vector([0.0,-100.5,-1.0]), 100.0, material_ground))
+# world.add(Sphere(ti.Vector([0.0,0.0,-1.0]),0.5,material_center))
+# world.add(Sphere(ti.Vector([-1.0,0.0,-1.0]),0.5,material_left))
+# world.add(Sphere(ti.Vector([-1.0,0.0,-1.0]),-0.4,material_left))
+# world.add(Sphere(ti.Vector([1.0,0.0,-1.0]),0.5,material_right))
+R = ti.cos(PI/4)
+material_left = Lambertian(ti.Vector([0.0,0.0,1.0]))
+material_right = Lambertian(ti.Vector([1.0,0.0,0.0]))
+world.add(Sphere(ti.Vector([-R,0,-1]), R, material_left))
+world.add(Sphere(ti.Vector([R,0,-1]), R, material_right))
 world.finalize()
 
 ###### Camera ##########
 viewport_height = 2.0
 viewport_width = aspect_ratio * viewport_height
 focal_length = 1.0
-cam = Camera()
+cam = Camera(90.0, aspect_ratio)
 start_attenuation = ti.Vector([1.0, 1.0, 1.0])
 
 origin = ti.Vector([0.0,0.0,0.0])

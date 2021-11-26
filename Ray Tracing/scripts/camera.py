@@ -1,10 +1,11 @@
 import taichi as ti
+from utils import *
 
 @ti.data_oriented
 class Camera:
-    def __init__(self):
-        aspect_ratio = 16.0/9.0
-        viewport_height = 2.0
+    def __init__(self, vfov, aspect_ratio):
+        theta = degrees_to_radians(vfov)
+        viewport_height = ti.tan(theta/2)*2
         viewport_width = aspect_ratio*viewport_height
         focal_length = 1.0
 
